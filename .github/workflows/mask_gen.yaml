@@ -34,4 +34,4 @@ jobs:
       - name: Add ModelSim to PATH
         run: echo "$HOME/intelFPGA/20.1/modelsim_ase/bin" >> $GITHUB_PATH
       - name: Mask_gen Testbench
-        run: chmod +x $GITHUB_WORKSPACE/CI/scripts/mask_gen && $GITHUB_WORKSPACE/CI/scripts/mask_gen
+        run: cd $GITHUB_WORKSPACE/CI/scripts/ && chmod +x mask_gen && ./mask_gen
