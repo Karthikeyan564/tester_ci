@@ -1,0 +1,6 @@
+vlib work
+vlog ../../rtl/mask_generation_VGA.sv
+vlog ../tb/mask_gen_VGA_tb.sv
+vsim -voptargs=+acc -c work.mask_gen_VGA_tb -do "onfinish stop;run -all;runStatus -full;quit"
+python3 ../python/vga_testcase_golden.py
+python3 ../python/vga_compare_output.py

@@ -1,0 +1,20 @@
+// For reference, in ModelSim, the LSB is position 0 in an array
+// e.g. 10101111, is stored as [1, 1, 1, 1, 0, 1, 0, 1]
+// e.g. Thus for a repeated pattern testcase with length of 7, repeatedPattern of 11111010 (think [0, 1, 0, 1, 1, 1, 1, 1] in array form) being set
+// e.g. We get a repeated sequence of [0, 1, 0, 1, 1, 1, 1] in mg_mask, i.e. [0, 1, 0, 1, 1, 1, 1, ... , 0, 1, 0, 1, 1, 1, 1] 
+// This applies to mask_type, pattern_w, repeatedPattern, 
+// However, for arrays, it is opposite to the above (which is just a single number with many bits)
+// e.g. If 10101111 is not stored as a 8 bit number but instead as an array of bits of length 8
+// e.g. Then 10101111 is stored as [1, 0, 1, 0, 1, 1, 1, 1]
+// This applies to full_pattern, mg_mask 
+// Note that for full_pattern, loading is done backwards (into the MGA) to account for this fact
+
+// <mask_type, 2 bits> <pattern_w, 5 bits> <repeatedPattern, 8 bits> <full_pattern, 32bits>
+11 00000 10101111 0
+11 00001 11111111 0
+11 00010 11111010 0
+11 00011 10101010 0
+00 01000 00000000 AAAA0000
+01 01000 00000000 AAAA0000
+01 11111 00000000 AAAA000F
+10 00000 00000000 BBBBBBBB

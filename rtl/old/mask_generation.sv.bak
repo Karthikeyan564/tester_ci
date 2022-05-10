@@ -1,0 +1,271 @@
+//////////////////////////////////////////////////////////////////////////////////
+// Company: UofT - ISML
+// Engineer: Motasem Ahmed Sakr
+//
+// Create Date: 06/13/2020 02:00:09 AM
+// Design Name:
+// Module Name: Mask Generation (MG)
+// Project Name: T6D
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module mask_generation 
+#(
+	parameter max_image_sensor_w = 1920, // Max Width of the image sensor = 1920 (HD)
+	parameter max_image_sensor_h = 1080// Max Height of the image sensor = 1080 (HD)
+ )
+(
+	input clk,    // Clock
+	input clk_en, // Clock Enable
+	input rst_n,  // Asynchronous reset active low
+
+	// Image Sensor Signals
+
+	input [10:0] image_sensor_w, // Width of the image sensor
+	input [10:0] image_sensor_h, // Height of the image sensor
+
+	// Pattern Input passed through the micro-processor
+
+	input [4:0] pattern_w, // size of the pattern W 
+	input [0:31] pattern,	// Bits for the repeated pattern (0: pixel 0 in row n, 1: pixel 0 in row n, ..., 31: pixel 31 in row n )
+	input right_sliding,	// Direction of sliding 1-- right / 0 -- left
+	input load_pattern, // to load the pattern for repetition
+
+
+	input [1:0] mask_type,	// Choose the type of mask between  Repeated pattern 00 - sliding pattern 01 - Random Mask 10 
+
+	//input rp_ready, // Ready signal for the module to verify the input
+
+	//output logic rp_mask_bit, // output of the repeated mask bit by bit
+	output logic [0:max_image_sensor_w-1] mg_mask, 
+	output logic rp_valid // Valid signal for the output
+);
+
+// (LSB) 0 1 2 3 4 ..... 299(e.g.) (MSB)
+logic [0:max_image_sensor_w-1] reg_curr, reg_next;
+logic [0:31]stored_pattern;
+
+logic valid_next;
+logic feedback_bit;
+
+logic [21:0]counter;
+
+always_ff @(posedge clk or negedge rst_n) 
+begin
+
+	if(~rst_n) 
+	begin
+		 //rp_mask_bit<= 'd0;
+		 rp_valid <= 1'b0;
+		 reg_curr <= 'd0;
+		 counter <='d0;
+		 mg_mask <='d0;
+	end 
+	else if(clk_en)
+	begin
+
+		if (load_pattern)
+		begin
+			stored_pattern <= pattern;
+			case (mask_type)
+				2'b00: // Repeated Pattern
+				begin 
+					reg_curr[0:31] <= pattern;
+					reg_curr[32:max_image_sensor_w-1] <='d0;
+					rp_valid<=1'd0;
+				end
+			
+				2'b01: // Sliding Pattern
+				begin
+
+					 for (int i=0; i < 32; i++) 
+					 begin
+		    	        reg_curr[31-i] = pattern[i];
+		        	 end
+		        	 reg_curr[32:max_image_sensor_w-1] <='d0;
+		        	 //rp_valid<=1'd1;
+	     
+				end
+
+				2'b10: // Random Mask
+				begin 
+
+
+				end
+
+				default:
+				begin 
+					reg_curr[0:31] <= pattern;
+					reg_curr[32:max_image_sensor_w-1] <='d0;
+					rp_valid<=1'd0;
+				 end 
+
+			endcase
+		    
+	       
+		end
+		else
+		begin
+			reg_curr <= reg_next;
+			$display("Reg Current is %b %b at %t ps",reg_curr[0:31],reg_curr[32:max_image_sensor_w-1],$time);
+			rp_valid <= valid_next;
+
+
+			// Output the 1-bit for the mask pixel by pixel
+			// case (mask_type)
+			// 	2'b00: // Repeated Pattern
+			// 	begin 
+			// 		//rp_mask_bit <= feedback_bit;
+			// 	end
+
+			// 	2'b01: // Sliding Pattern
+			// 	begin 
+
+			// 		mg_mask <= reg_curr;
+			// 		// if(right_sliding)
+			// 		// 	rp_mask_bit <= reg_curr[image_sensor_w-1];
+			// 		// else
+			// 		// 	rp_mask_bit <= reg_curr[0];
+			// 	end
+		
+			// 	default : rp_mask_bit <= feedback_bit;
+			// endcase
+
+
+
+		end
+
+
+		// Controlling the counter for both types of masks
+
+		case (mask_type)
+			2'b00: // Repeated Pattern
+			begin 
+					
+				if (counter <= image_sensor_w) 
+					counter = counter + 22'd1;
+				else
+				begin 
+					mg_mask <=reg_curr;
+					counter = 'd0;
+				end
+					
+			end
+
+			2'b01: // Sliding Pattern
+			begin 
+
+
+				mg_mask <= reg_curr;
+
+				if (counter <= (image_sensor_w + pattern_w)) 
+					counter = counter + 22'd1;
+				else
+					begin 
+
+						for (int i=0; i < 32; i++) 
+						begin
+			    	        reg_curr[31-i] = stored_pattern[i];
+			        	end
+			        	 reg_curr[32:max_image_sensor_w-1] <='d0;
+			        	 counter = 'd0;
+				end
+
+					
+
+			end
+	
+			default : 
+			begin
+
+				if (counter <= image_sensor_w) 
+					counter = counter + 22'd1;
+				else
+					mg_mask <=reg_curr;
+
+			end
+		endcase
+
+		// if ((counter <= image_sensor_w) & mask_type == 2'b00) 
+		// 	counter = counter + 22'd1;
+		// else
+		// 	mg_mask <=reg_curr;
+		 
+	end
+end
+
+
+always_comb 
+begin
+	case (mask_type)
+	2'b00: // Repeated Pattern
+	begin 
+
+		for (int i = 0; i < 32; i++) begin
+
+			if(pattern_w == (i+1))
+			begin 
+				feedback_bit = reg_curr[i];	
+			end
+				
+		end
+
+
+		if (counter <= image_sensor_w)
+		begin
+			reg_next = {feedback_bit,reg_curr[0:max_image_sensor_w-2]};
+			valid_next =1'b0;
+		end
+		else
+			valid_next =1'b1;		
+
+
+	end
+
+
+	2'b01: // Sliding Pattern
+	begin 
+		valid_next =1'b1;	
+		if (right_sliding)
+			reg_next = {1'b0,reg_curr[0:max_image_sensor_w-2]};
+		else
+			reg_next = {reg_curr[1:max_image_sensor_w-1],1'b0};
+
+	end
+	
+	default: // Repeating Pattern
+	begin 
+
+		for (int i = 0; i < 32; i++) begin
+
+			if(pattern_w == (i+1))
+			begin 
+				feedback_bit = reg_curr[i];	
+			end
+			
+		end
+
+		if (counter <= image_sensor_w)
+		begin
+			reg_next = {feedback_bit,reg_curr[0:max_image_sensor_w-2]};
+			valid_next =1'b1;
+		end
+		else
+			valid_next =1'b0;		
+
+	end
+
+	endcase
+
+end
+
+endmodule
