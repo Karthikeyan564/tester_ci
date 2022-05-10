@@ -132,7 +132,7 @@ def main():
                         feedback_bit_random[i][0]   = mg_mask_prev[i+31] ^ mg_mask_prev[i+21]  ^  mg_mask_prev[i+1]   ^ mg_mask_prev[i+0];
                         feedback_bit_random[i][1]   = mg_mask_prev[i+30] ^ mg_mask_prev[i+20]  ^  mg_mask_prev[i+0]   ^ mg_mask_prev[i+16];
                         feedback_bit_random[i][2]   = mg_mask_prev[i+29] ^ mg_mask_prev[i+19]  ^  mg_mask_prev[i+2]   ^ mg_mask_prev[i+15];
-                        feedback_bit_random[i][3]   = mg_mask_prev[i+28] - mg_mask_prev[i+18]  ^  mg_mask_prev[i+3]   ^ mg_mask_prev[i+14];
+                        feedback_bit_random[i][3]   = mg_mask_prev[i+28] ^ mg_mask_prev[i+18]  ^  mg_mask_prev[i+3]   ^ mg_mask_prev[i+14];
                         feedback_bit_random[i][4]   = mg_mask_prev[i+27] ^ mg_mask_prev[i+17]  ^  mg_mask_prev[i+4]   ^ mg_mask_prev[i+13];
                         feedback_bit_random[i][5]   = mg_mask_prev[i+26] ^ mg_mask_prev[i+16]  ^  mg_mask_prev[i+5]   ^ mg_mask_prev[i+12];
                         feedback_bit_random[i][6]   = mg_mask_prev[i+25] ^ mg_mask_prev[i+15]  ^  mg_mask_prev[i+6]   ^ mg_mask_prev[i+11];
